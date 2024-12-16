@@ -1,0 +1,54 @@
+import numpy as np
+
+# Define the sigmoid activation function
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+# Define the perceptron model
+def perceptron(X, weights, bias):
+    linear_output = np.dot(X, weights) + bias
+    return sigmoid(linear_output)
+
+# Train the perceptron model for a logic gate
+def train_perceptron(X, y, learning_rate=0.1, epochs=1000):
+    weights = np.random.rand(X.shape[1])
+    bias = np.random.rand()
+    
+    for epoch in range(epochs):
+        for i in range(len(X)):
+            # Forward pass
+            output = perceptron(X[i], weights, bias)
+            
+            # Compute error
+            error = y[i] - output
+            
+            # Update weights and bias using gradient descent
+            weights += learning_rate * error * X[i]
+            bias += learning_rate * error
+    
+    return weights, bias
+
+# Define inputs and outputs for AND gate
+X_and = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y_and = np.array([0, 0, 0, 1])  # AND gate outputs
+
+# Define inputs and outputs for OR gate
+X_or = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y_or = np.array([0, 1, 1, 1])  # OR gate outputs
+
+# Train perceptron for AND gate
+weights_and, bias_and = train_perceptron(X_and, y_and)
+
+# Train perceptron for OR gate
+weights_or, bias_or = train_perceptron(X_or, y_or)
+
+# Test the perceptron
+print("AND Gate:")
+for x in X_and:
+    output = perceptron(x, weights_and, bias_and)
+    print(f"Input: {x}, Output: {output:.2f}")
+
+print("\nOR Gate:")
+for x in X_or:
+    output = perceptron(x, weights_or, bias_or)
+    print(f"Input: {x}, Output: {output:.2f}")

@@ -1,0 +1,69 @@
+import tensorflow as tf
+from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.datasets import mnist
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load MNIST dataset
+(x_train, _), (x_test, _) = mnist.load_data()
+
+# Normalize the data to the range [0, 1]
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+
+# Flatten the images
+x_train = x_train.reshape((x_train.shape[0], -1))
+x_test = x_test.reshape((x_test.shape[0], -1))
+
+# Define the dimensions of the input and the encoding
+input_dim = x_train.shape[1]
+encoding_dim = 64  # Dimensionality of the encoding space
+
+# Build the autoencoder
+input_img = Input(shape=(input_dim,))
+
+# Encoder layers
+encoded = Dense(128, activation='relu')(input_img)
+encoded = Dense(encoding_dim, activation='relu')(encoded)
+
+# Decoder layers
+decoded = Dense(128, activation='relu')(encoded)
+decoded = Dense(input_dim, activation='sigmoid')(decoded)
+
+# Autoencoder model
+autoencoder = Model(input_img, decoded)
+
+# Encoder model (for feature extraction)
+encoder = Model(input_img, encoded)
+
+# Compile the autoencoder
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+
+# Train the autoencoder
+autoencoder.fit(x_train, x_train,
+                epochs=20,
+                batch_size=256,
+                shuffle=True,
+                validation_data=(x_test, x_test))
+
+# Encode and decode some digits
+encoded_imgs = encoder.predict(x_test)
+decoded_imgs = autoencoder.predict(x_test)
+
+# Visualize the original and reconstructed images
+n = 10  # Number of images to display
+plt.figure(figsize=(20, 4))
+for i in range(n):
+    # Display original
+    ax = plt.subplot(2, n, i + 1)
+    plt.imshow(x_test[i].reshape(28, 28), cmap='gray')
+    plt.title("Original")
+    plt.axis('off')
+
+    # Display reconstruction
+    ax = plt.subplot(2, n, i + 1 + n)
+    plt.imshow(decoded_imgs[i].reshape(28, 28), cmap='gray')
+    plt.title("Reconstructed")
+    plt.axis('off')
+plt.show()

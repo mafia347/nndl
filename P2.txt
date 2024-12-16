@@ -1,0 +1,61 @@
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_diabetes, load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+# Load datasets
+diabetes_data = load_diabetes()
+X_diabetes = diabetes_data.data
+y_diabetes = diabetes_data.target
+# Binarize target for classification
+y_diabetes = (y_diabetes > y_diabetes.mean()).astype(int)
+
+cancer_data = load_breast_cancer()
+X_cancer = cancer_data.data
+y_cancer = cancer_data.target
+
+sonar_data = pd.read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/undocumented/connectionist-bench/sonar/sonar.all-data", header=None)
+X_sonar = sonar_data.iloc[:, :-1].values
+y_sonar = sonar_data.iloc[:, -1].map({'R': 0, 'M': 1}).values
+
+def create_and_train_nn(X, y, activation_function='relu', hidden_layers=1):
+    # Split data into train and test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Scale features
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # Build the model
+    model = Sequential()
+    model.add(Dense(64, activation=activation_function, input_shape=(X_train.shape[1],)))
+    if hidden_layers == 2:
+        model.add(Dense(32, activation=activation_function))
+    model.add(Dense(1, activation='sigmoid'))  # Output layer for binary classification
+
+    # Compile the model
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Train the model
+    model.fit(X_train, y_train, epochs=50, batch_size=10, verbose=0)
+
+    # Evaluate the model
+    y_pred = (model.predict(X_test) > 0.5).astype(int)
+    accuracy = accuracy_score(y_test, y_pred)
+    return accuracy
+
+# Train and evaluate models on each dataset
+diabetes_accuracy = create_and_train_nn(X_diabetes, y_diabetes, activation_function='relu')
+print(f"Diabetes Dataset Accuracy: {diabetes_accuracy:.2f}")
+
+cancer_accuracy = create_and_train_nn(X_cancer, y_cancer, activation_function='tanh')
+print(f"Cancer Dataset Accuracy: {cancer_accuracy:.2f}")
+
+sonar_accuracy = create_and_train_nn(X_sonar, y_sonar, activation_function='sigmoid', hidden_layers=2)
+print(f"Sonar Dataset Accuracy: {sonar_accuracy:.2f}")
